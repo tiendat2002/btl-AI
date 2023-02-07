@@ -464,7 +464,7 @@ def Reset():
     M.drawReset(window)
 
 def ChooseFile():
-    global matrix,M,window,sizeMatrix;
+    global M,window,sizeMatrix,size,buttonPlay,buttonPause,buttonReset,buttonChooseFile,labelTime,radioButtons,group;
     matrix=[];
     filePath = filedialog.askopenfile(
         mode='r', filetypes=(('text files', 'txt'),))
@@ -474,9 +474,26 @@ def ChooseFile():
             break
         matrix.append(data.strip());
     if matrix != []:
-        M.drawNew(window,7);
         h=len(matrix)*15;
         w=len(matrix[0])*15;
+        size = (w+200,700);
+        window = pygame.display.set_mode(size);
+        buttonPlay = button(size[0]-150, 30, 100, 50, 'Bắt đầu', Play)
+        buttonPause = button(size[0]-150, 100, 100, 50, 'Dừng lại', Pause)
+        buttonReset = button(size[0]-150, 170, 100, 50, 'Đặt lại toàn bộ', Reset)
+        buttonChooseFile = button(size[0]-150, 240, 100, 50, 'Chọn file', ChooseFile)
+        labelTime = label(size[0]-150, 600, 150, 50, '00:00s')
+        radioButtons = [
+        RadioButton(size[0]-150, 310, 100, 50, font, "BFS"),
+        RadioButton(size[0]-150, 380, 100, 50, font, "DFS"),
+        RadioButton(size[0]-150, 450, 100, 50, font, "A*"),
+        RadioButton(size[0]-150, 520, 100, 50, font, "Dijkstra")
+        ]
+        for rb in radioButtons:
+            rb.setRadioButtons(radioButtons)
+        radioButtons[0].clicked = True
+        group = pygame.sprite.Group(radioButtons)
+        M.drawNew(window,7);
         sizeMatrix=(w,h)
         M = makeMatrix(sizeMatrix,margin);
         M.drawF(window,7);
