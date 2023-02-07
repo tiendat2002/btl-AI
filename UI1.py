@@ -56,6 +56,8 @@ class smallBox:
             self.baseColor = (224, 123, 57)  # màu của tuyến đường tốt nhất
         elif state == 'uncheck':
             self.baseColor = (0, 255, 0)  # màu của ô đang chờ xét duyệt
+        elif state == 'begin':
+            self.baseColor =(0,0,0)
 
 
 class makeMatrix:
@@ -184,6 +186,21 @@ class makeMatrix:
                                  (self.margin[0]+self.size[0], j+self.margin[1]-borderWid, borderWid, 1))
         for i in range(0, self.size[0]//5):
             for j in range(0, self.size[1]//5):
+                self.matrix[i][j].draw(window)
+    def drawNew(self,window,borderWid):
+        for i in range(0, self.size[0]+2*borderWid):
+            pygame.draw.rect(window, (0,0,0),
+                             (i+self.margin[0]-borderWid, self.margin[1]-borderWid, 1, borderWid))
+            pygame.draw.rect(window, (0,0,0),
+                             (i+self.margin[0]-borderWid, self.margin[1]+self.size[1], 1, borderWid))
+            for j in range(0, self.size[1]+2*borderWid):
+                pygame.draw.rect(window, (0,0,0),
+                                 (self.margin[0]-borderWid, j+self.margin[1]-borderWid, borderWid, 1))
+                pygame.draw.rect(window, (0,0,0),
+                                 (self.margin[0]+self.size[0], j+self.margin[1]-borderWid, borderWid, 1))
+        for i in range(0, self.size[0]//5):
+            for j in range(0, self.size[1]//5):
+                self.matrix[i][j].change('begin');
                 self.matrix[i][j].draw(window)
 
     def solve(self, window):  # phần giải quyết vấn đề bfs
@@ -417,7 +434,15 @@ class label():
         ])
         window.blit(self.buttonSurface, self.buttonRect)
 
-
+#init 
+pygame.init()
+size = (1000, 700)
+window = pygame.display.set_mode(size)
+isRunning = True
+algorithm = "bfs"
+margin = (20, 20)
+sizeMatrix = (size[0]-200, size[1]-50)
+M = makeMatrix(sizeMatrix, margin)
 # function:
 
 
@@ -438,24 +463,47 @@ def Reset():
     bf = False
     M.drawReset(window)
 
-
 def ChooseFile():
-    global filePath
+    global matrix,M,window,sizeMatrix;
+    matrix=[];
     filePath = filedialog.askopenfile(
         mode='r', filetypes=(('text files', 'txt'),))
-    str = filePath.read()
+    while True:
+        data = filePath.readline()
+        if data == '':
+            break
+        matrix.append(data.strip());
+    if matrix != []:
+        M.drawNew(window,7);
+        h=len(matrix)*15;
+        w=len(matrix[0])*15;
+        sizeMatrix=(w,h)
+        M = makeMatrix(sizeMatrix,margin);
+        M.drawF(window,7);
+        print(matrix);
+        for i in range(len(matrix)):
+            for j in range(len(matrix[0])):
+                if matrix[i][j]=='1':
+                    print((i,j));
+                    y=i+(1+2*i);
+                    x=j+(2*j+1);
+                    M.E[x][y] = -1
+                    t = [1, 0, -1]
+                    for u in range(0, 3):
+                        for v in range(0, 3):
+                            M.E[x+t[u]][y+t[v]] = -1
+                            M.matrix[x+t[u]][y+t[v]].change('obs')
+                            M.matrix[x+t[u]][y+t[v]].draw(window)
+
+
     filePath.close()
 
-
 # init values:
-pygame.init()
-size = (1000, 700)
-window = pygame.display.set_mode(size)
-isRunning = True
-algorithm = "bfs"
-margin = (20, 20)
-sizeMatrix = (size[0]-200, size[1]-50)
-M = makeMatrix(sizeMatrix, margin)
+
+
+    # for i in range(1,w):
+    #     for j in range(1,h):
+    #         M.E[]
 buttonPlay = button(size[0]-150, 30, 100, 50, 'Bắt đầu', Play)
 buttonPause = button(size[0]-150, 100, 100, 50, 'Dừng lại', Pause)
 buttonReset = button(size[0]-150, 170, 100, 50, 'Đặt lại toàn bộ', Reset)
