@@ -59,14 +59,16 @@ class smallBox:
         elif state == 'begin':
             self.baseColor =(0,0,0)
 
-
 class makeMatrix:
     def __init__(self, size, margin):
         self.matrix = []
         self.size = size
         self.margin = margin
         self.start = None
+        self.startq = list()
         self.end = None
+        self.endq = list()
+        self.heap = []
         self.n = size[0]/5
         self.m = size[1]/5
         self.E = [[0 for i in range(0, size[1]//5)]
@@ -74,6 +76,8 @@ class makeMatrix:
         self.sets = queue.PriorityQueue()
         self.queue = queue.Queue()
         self.stack = []
+        self.stack2 = queue.LifoQueue()
+        self.set = set()
         self.isFind = True
         for i in range(margin[0], size[0]+margin[0]+5, 5):
             b = []
@@ -84,9 +88,15 @@ class makeMatrix:
     def drawEnd(self, mousePos):
         x = (mousePos[0]-self.margin[0])//5
         y = (mousePos[1]-self.margin[1])//5
+        if(self.E[x][y] == -1):
+            return
+        if(len(self.endq)!=0):
+            return
         self.matrix[x][y].change('dis')
         self.matrix[x][y].draw(window)
+        
         self.end = point(x, y)
+        self.endq.append(self.end)
         self.E[x][y] = 0
         t = [1, 0, -1]
         for i in range(0, 3):
@@ -112,9 +122,14 @@ class makeMatrix:
         #             self.matrix[xo+t[i]][yo+t[j]].draw(window)
         x = (mousePos[0]-self.margin[0])//5
         y = (mousePos[1]-self.margin[1])//5
+        if(self.E[x][y] == -1):
+            return
+        if(len(self.startq)!=0):
+            return
         self.matrix[x][y].change('sta')
         self.matrix[x][y].draw(window)
         self.start = point(x, y)
+        self.startq.append(self.start)
         self.E[x][y] = 0
         t = [1, 0, -1]
         for i in range(0, 3):
@@ -123,7 +138,10 @@ class makeMatrix:
                 self.matrix[x+t[i]][y+t[j]].change('sta')
                 self.matrix[x+t[i]][y+t[j]].draw(window)
         self.sets.put(self.start)
+        self.set.add(self.start)
+        self.heap.append(self.start)
         self.stack.append(self.start)
+        self.stack2.put(self.start)
         self.queue.put(self.start)
 
     def drawSE(self):
@@ -165,7 +183,11 @@ class makeMatrix:
                   for i in range(0, size[0]//5)]
         self.sets = queue.PriorityQueue()
         self.queue = queue.Queue()
+        self.heap = []
         self.stack = list()
+        self.stack2 = queue.LifoQueue()
+        self.endq=list()
+        self.startq = list()
         self.isFind = True
         for i in range(margin[0], size[0]+margin[0]+5, 5):
             b = []
@@ -254,10 +276,44 @@ class makeMatrix:
         global u, bf
         if self.isFind == False:
             return
-        if (self.sets.empty()):
+        p1 = [0, 1, 0, -1]
+        p2 = [-1, 0, 1, 0]
+        if(self.stack2.qsize==0):
             bf = False
             u = True
             return
+        k = self.stack2.get()
+        self.matrix[k.x][k.y].change('check')
+        self.matrix[k.x][k.y].draw(window)
+        for i in range(4):
+            x = k.x+p1[i]
+            y = k.y+p2[i]
+            if x < 0 or x >= self.n:
+                continue
+            if y < 0 or y >= self.m:
+                continue
+            if self.E[x][y] == -1:
+                continue
+            temp = point(x, y, k)
+            temp.G = k.G + 1
+            temp.H = math.sqrt(pow(x-self.end.x, 2)+pow(y-self.end.y, 2))
+            self.E[x][y] = -1
+            self.stack2.put(temp)
+            self.matrix[x][y].change('uncheck')
+            self.matrix[x][y].draw(window)
+            if temp.H == 0:
+                self.isFind = False
+                while temp is not None:
+                    self.matrix[temp.x][temp.y].change('road')
+                    self.matrix[temp.x][temp.y].draw(window)
+                    temp = temp.old
+                bf = False
+                u = True
+                self.matrix[self.start.x][self.start.y].draw(window)
+                self.matrix[x][y].change('dis')
+                self.matrix[x][y].draw(window)
+
+
 
     def solve2(self, window):  # phần giải quyết vấn đề a*
         if not self.start or not self.end:
@@ -268,6 +324,7 @@ class makeMatrix:
             return
         p1 = [0, 0, 1, -1]
         p2 = [1, -1, 0, 0]
+        # self.S = Stack()
         if (self.sets.empty()):
             bf = False
             u = True
@@ -305,16 +362,59 @@ class makeMatrix:
                 self.matrix[x][y].draw(window)
 
     def solve3(self, window):  # phần giải quyết vấn đề dijkstra
+        # if not self.start or not self.end:
+        #     return
+        # self.drawSE()
+        # global u, bf
+        # if self.isFind == False:
+        #     return
+        # if (self.sets.empty()):
+        #     bf = False
+        #     u = True
+        #     return
         if not self.start or not self.end:
             return
         self.drawSE()
         global u, bf
         if self.isFind == False:
             return
-        if (self.sets.empty()):
+        p1 = [0, 0, 1, -1]
+        p2 = [1, -1, 0, 0]
+        if (len(self.heap) == 0):
             bf = False
             u = True
             return
+        k = self.heap.pop(0)
+        self.matrix[k.x][k.y].change('check')
+        self.matrix[k.x][k.y].draw(window)
+        for i in range(4):
+            x = k.x+p1[i]
+            y = k.y+p2[i]
+            if x < 0 or x >= self.n:
+                continue
+            if y < 0 or y >= self.m:
+                continue
+            if self.E[x][y] == -1:
+                continue
+            temp = point(x, y, k)
+            temp.G = k.G + 1
+            temp.H = math.sqrt(pow(x-self.end.x, 2)+pow(y-self.end.y, 2))
+            self.E[x][y] = -1
+            self.heap.append(temp)
+            self.heap.sort(key=lambda element: element.G)
+            self.matrix[x][y].change('uncheck')
+            self.matrix[x][y].draw(window)
+            if temp.H == 0:
+                self.isFind = False
+                while temp is not None:
+                    self.matrix[temp.x][temp.y].change('road')
+                    self.matrix[temp.x][temp.y].draw(window)
+                    temp = temp.old
+                bf = False
+                u = True
+                self.matrix[self.start.x][self.start.y].draw(window)
+                self.matrix[x][y].change('dis')
+                self.matrix[x][y].draw(window)
 
 
 class RadioButton(pygame.sprite.Sprite):
@@ -437,15 +537,7 @@ class label():
         ])
         window.blit(self.buttonSurface, self.buttonRect)
 
-#init 
-pygame.init()
-size = (1000, 700)
-window = pygame.display.set_mode(size)
-isRunning = True
-algorithm = "bfs"
-margin = (20, 20)
-sizeMatrix = (size[0]-200, size[1]-50)
-M = makeMatrix(sizeMatrix, margin)
+
 # function:
 
 
@@ -466,6 +558,7 @@ def Reset():
     bf = False
     M.drawReset(window)
 
+
 def ChooseFile():
     global M,window,sizeMatrix,size,buttonPlay,buttonPause,buttonReset,buttonChooseFile,labelTime,radioButtons,group,objects;
     matrix=[];
@@ -477,6 +570,7 @@ def ChooseFile():
             break
         matrix.append(data.strip());
     if matrix != []:
+        M.drawReset(window);
         buttonChooseFile.transparent();
         objects=[];
         h=len(matrix)*15;
@@ -515,15 +609,18 @@ def ChooseFile():
                             M.matrix[x+t[u]][y+t[v]].change('obs')
                             M.matrix[x+t[u]][y+t[v]].draw(window)
 
-
     filePath.close()
 
+
 # init values:
-
-
-    # for i in range(1,w):
-    #     for j in range(1,h):
-    #         M.E[]
+pygame.init()
+size = (1000, 700)
+window = pygame.display.set_mode(size)
+isRunning = True
+algorithm = "bfs"
+margin = (20, 20)
+sizeMatrix = (size[0]-200, size[1]-50)
+M = makeMatrix(sizeMatrix, margin)
 buttonPlay = button(size[0]-150, 30, 100, 50, 'Bắt đầu', Play)
 buttonPause = button(size[0]-150, 100, 100, 50, 'Dừng lại', Pause)
 buttonReset = button(size[0]-150, 170, 100, 50, 'Đặt lại toàn bộ', Reset)
@@ -579,6 +676,8 @@ while isRunning:
         algorithm = radioButtons[1].text
     elif radioButtons[2].clicked:
         algorithm = radioButtons[2].text
+    elif radioButtons[3].clicked:
+        algorithm = radioButtons[3].text
     if bf:
         if (u):
             global t
