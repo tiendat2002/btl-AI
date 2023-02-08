@@ -406,6 +406,9 @@ class button():
             self.buttonRect.height/2 - self.buttonSurf.get_rect().height/2
         ])
         window.blit(self.buttonSurface, self.buttonRect)
+    def transparent(self):
+        self.buttonSurface.set_alpha(0);
+        self.buttonSurf.set_alpha(0);
 
 
 class label():
@@ -464,7 +467,7 @@ def Reset():
     M.drawReset(window)
 
 def ChooseFile():
-    global M,window,sizeMatrix,size,buttonPlay,buttonPause,buttonReset,buttonChooseFile,labelTime,radioButtons,group;
+    global M,window,sizeMatrix,size,buttonPlay,buttonPause,buttonReset,buttonChooseFile,labelTime,radioButtons,group,objects;
     matrix=[];
     filePath = filedialog.askopenfile(
         mode='r', filetypes=(('text files', 'txt'),))
@@ -474,6 +477,8 @@ def ChooseFile():
             break
         matrix.append(data.strip());
     if matrix != []:
+        buttonChooseFile.transparent();
+        objects=[];
         h=len(matrix)*15;
         w=len(matrix[0])*15;
         size = (w+200,700);
@@ -497,11 +502,9 @@ def ChooseFile():
         sizeMatrix=(w,h)
         M = makeMatrix(sizeMatrix,margin);
         M.drawF(window,7);
-        print(matrix);
         for i in range(len(matrix)):
             for j in range(len(matrix[0])):
                 if matrix[i][j]=='1':
-                    print((i,j));
                     y=i+(1+2*i);
                     x=j+(2*j+1);
                     M.E[x][y] = -1
